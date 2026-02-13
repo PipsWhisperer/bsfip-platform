@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Firebase Connection Test - BSFIP Platform</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🔥 Firebase Connection Test</h1>
+            <p>Testing BSFIP Platform Firebase Integration</p>
+        </header>
+
+        <main>
+            <section class="test-section">
+                <h2>📊 Test Data Submission</h2>
+                <div class="test-form">
+                    <div class="form-group">
+                        <label for="testName">Business Name:</label>
+                        <input id="testName" type="text" placeholder="Enter test business name" value="Test Business">
+                    </div>
+                    <div class="form-group">
+                        <label for="testRevenue">Monthly Revenue:</label>
+                        <input id="testRevenue" type="number" placeholder="Enter revenue" value="50000">
+                    </div>
+                    <button onclick="runFirebaseTest()">🚀 Test Firebase Connection</button>
+                    <button onclick="runDirectImportTest()">🔧 Direct Import Test</button>
+                </div>
+            </section>
+
+            <section class="results-section">
+                <h2>📋 Test Results</h2>
+                <div id="testResults">
+                    <p>Click a test button above to see results...</p>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script type="module">
+        import { saveSME } from "../backend/database.js";
+        
+        console.log("=== FIREBASE TEST PAGE LOADED ===");
+        console.log("saveSME function:", typeof saveSME);
+        
+        window.runFirebaseTest = async function() {
+            console.log("=== RUNNING FIREBASE TEST ===");
+            
+            const name = document.getElementById("testName").value;
+            const revenue = document.getElementById("testRevenue").value;
+            const resultsDiv = document.getElementById("testResults");
+            
+            if (!name || !revenue) {
+                resultsDiv.innerHTML = `<p style="color: red;">❌ Please fill in all fields</p>`;
+                return;
+            }
+            
+            const testData = {
+                name: name.trim(),
+                revenue: parseFloat(revenue),
+                testType: "form_test",
+                timestamp: new Date().toISOString(),
+                testId: Math.random().toString(36).substr(2, 9)
+            };
+            
+            resultsDiv.innerHTML = `<p>🔄 Testing Firebase connection...</p>`;
+            
+            try {
+                console.log("Sending test data:", testData);
+                const docId = await saveSME(testData);
+                console.log("✅ Success! Document ID:", docId);
+                
+                resultsDiv.innerHTML = `
+                    <div style="background: #d4edda; padding: 20px; border-radius: 8px; margin: 20px 0;">
+                        <h3 style="color: #155724; margin: 0 0 10px 0;">✅ SUCCESS!</h3>
+                        <p style="margin: 5px 0;"><strong>Document ID:</strong> ${docId}</p>
+                        <p style="margin: 5px 0;"><strong>Business Name:</strong> ${testData.name}</p>
+                        <p style="margin: 5px 0;"><strong>Revenue:</strong> ${testData.revenue}</p>
+                        <p style="margin: 5px 0;"><strong>Test ID:</strong> ${testData.testId}</p>
+                        <p style="margin: 10px 0 0 0; color: #155724;">
+                            📱 Check Firebase Console → Firestore Database → smeData collection
+                        </p>
+                    </div>
+                `;
+                
+            } catch (error) {
+                console.error("❌ Test failed:", error);
+                resultsDiv.innerHTML = `
+                    <div style="background: #f8d7da; padding: 20px; border-radius: 8px; margin: 20px 0;">
+                        <h3 style="color: #721c24; margin: 0 0 10px 0;">❌ ERROR!</h3>
+                        <p style="margin: 5px 0;"><strong>Error:</strong> ${error.message}</p>
+                        <p style="margin: 5px 0;"><strong>Code:</strong> ${error.code || 'N/A'}</p>
+                        <p style="margin: 10px 0 0 0; color: #721c24;">
+                            🔧 Check Firebase configuration and network connection
+                        </p>
+                    </div>
+                `;
+            }
+        };
+        
+        window.runDirectImportTest = async function() {
+            console.log("=== RUNNING DIRECT IMPORT TEST ===");
+            const resultsDiv = document.getElementById("testResults");
+            
+            try {
+                // Test direct import
+                const { db } = await import("../backend/firebaseConfig.js");
+                console.log("Direct db import:", db);
+                
+                const { collection, addDoc } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
+                
+                const directTestData = {
+                    name: "Direct Import Test",
+                    revenue: 25000,
+                    testType: "direct_import",
+                    timestamp: new Date().toISOString(),
+                    testId: Math.random().toString(36).substr(2, 9)
+                };
+                
+                resultsDiv.innerHTML = `<p>🔄 Running direct import test...</p>`;
+                
+                const docRef = await addDoc(collection(db, "smeData"), directTestData);
+                console.log("✅ Direct import success! Document ID:", docRef.id);
+                
+                resultsDiv.innerHTML = `
+                    <div style="background: #d1ecf1; padding: 20px; border-radius: 8px; margin: 20px 0;">
+                        <h3 style="color: #0c5460; margin: 0 0 10px 0;">🔧 DIRECT IMPORT SUCCESS!</h3>
+                        <p style="margin: 5px 0;"><strong>Document ID:</strong> ${docRef.id}</p>
+                        <p style="margin: 5px 0;"><strong>Test Type:</strong> ${directTestData.testType}</p>
+                        <p style="margin: 10px 0 0 0; color: #0c5460;">
+                            ✅ Firebase SDK imports working correctly
+                        </p>
+                    </div>
+                `;
+                
+            } catch (error) {
+                console.error("❌ Direct import test failed:", error);
+                resultsDiv.innerHTML = `
+                    <div style="background: #f8d7da; padding: 20px; border-radius: 8px; margin: 20px 0;">
+                        <h3 style="color: #721c24; margin: 0 0 10px 0;">❌ DIRECT IMPORT ERROR!</h3>
+                        <p style="margin: 5px 0;"><strong>Error:</strong> ${error.message}</p>
+                        <p style="margin: 10px 0 0 0; color: #721c24;">
+                            🔧 Check Firebase SDK imports and configuration
+                        </p>
+                    </div>
+                `;
+            }
+        };
+        
+        // Auto-run on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log("=== DOM LOADED ===");
+            console.log("Functions available:");
+            console.log("- runFirebaseTest:", typeof window.runFirebaseTest);
+            console.log("- runDirectImportTest:", typeof window.runDirectImportTest);
+        });
+    </script>
+</body>
+</html>
